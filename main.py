@@ -67,6 +67,47 @@ def exit_full_screen(event=None):
     is_full_screen = False
     root.attributes("-fullscreen", False)
 
+def find_text():
+    find_dialog = tk.Toplevel(root)
+    find_dialog.title("Find and Replace")
+    find_dialog.transient(root)
+    
+    tk.Label(find_dialog, text="Find:").grid(row=0, column=0, padx=4, pady=4)
+    tk.Label(find_dialog, text="Replace:").grid(row=1, column=0, padx=4, pady=4)
+    
+    find_entry = tk.Entry(find_dialog, width=30)
+    find_entry.grid(row=0, column=1, padx=4, pady=4)
+    
+    replace_entry = tk.Entry(find_dialog, width=30)
+    replace_entry.grid(row=1, column=1, padx=4, pady=4)
+    
+    def find():
+        text_area.tag_remove('highlight', '1.0', tk.END)
+        find_text = find_entry.get()
+        if find_text:
+            idx = '1.0'
+            while True:
+                idx = text_area.search(find_text, idx, nocase=1, stopindex=tk.END)
+                if not idx:
+                    break
+                lastidx = '%s+%dc' % (idx, len(find_text))
+                text_area.tag_add('highlight', idx, lastidx)
+                idx = lastidx
+            text_area.tag_config('highlight', background='yellow')
+    
+    def replace():
+        find_text = find_entry.get()
+        replace_text = replace_entry.get()
+        content = text_area.get("1.0", tk.END)
+        new_content = content.replace(find_text, replace_text)
+        text_area.delete("1.0", tk.END)
+        text_area.insert("1.0", new_content)
+    
+    tk.Button(find_dialog, text="Find", command=find).grid(row=2, column=0, padx=4, pady=4)
+    tk.Button(find_dialog, text="Replace", command=replace).grid(row=2, column=1, padx=4, pady=4)
+    
+    find_dialog.mainloop()
+
 class TextLineNumbers(tk.Canvas):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -137,6 +178,7 @@ edit_menu.add_command(label="Copy", command=copy_text)
 edit_menu.add_command(label="Paste", command=paste_text)
 edit_menu.add_separator()
 edit_menu.add_command(label="Select All", command=select_all)
+edit_menu.add_command(label="Find and Replace", command=find_text)
 
 # Add view menu
 view_menu = tk.Menu(menu_bar, tearoff=0)
