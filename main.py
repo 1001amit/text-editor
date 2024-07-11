@@ -1,5 +1,42 @@
 import tkinter as tk
-from tkinter import filedialog, font
+from tkinter import filedialog, font, messagebox
+import os
+
+RECENT_FILES_PATH = "recent_files.txt"
+
+def load_recent_files():
+    if os.path.exists(RECENT_FILES_PATH):
+        with open(RECENT_FILES_PATH, "r") as file:
+            return file.read().splitlines()
+    return []
+
+def save_recent_files():
+    with open(RECENT_FILES_PATH, "w") as file:
+        for file_path in recent_files:
+            file.write(file_path + "\n")
+
+def update_recent_files(file_path):
+    if file_path in recent_files:
+        recent_files.remove(file_path)
+    recent_files.insert(0, file_path)
+    if len(recent_files) > 10:
+        recent_files.pop()
+    save_recent_files()
+    update_recent_files_menu()
+
+def update_recent_files_menu():
+    recent_files_menu.delete(0, tk.END)
+    for file_path in recent_files:
+        recent_files_menu.add_command(label=file_path, command=lambda path=file_path: open_recent_file(path))
+
+def open_recent_file(file_path):
+    if os.path.exists(file_path):
+        with open(file_path, "r") as file:
+            text_area.delete(1.0, tk.END)
+            text_area.insert(tk.END, file.read())
+        update_recent_files(file_path)
+    else:
+        messagebox.showerror("Error", f"File not found: {file_path}")
 
 def new_file():
     text_area.delete(1.0, tk.END)
@@ -11,6 +48,7 @@ def open_file():
         with open(file_path, "r") as file:
             text_area.delete(1.0, tk.END)
             text_area.insert(tk.END, file.read())
+        update_recent_files(file_path)
 
 def save_file():
     file_path = filedialog.asksaveasfilename(defaultextension=".txt", 
@@ -18,6 +56,7 @@ def save_file():
     if file_path:
         with open(file_path, "w") as file:
             file.write(text_area.get(1.0, tk.END))
+        update_recent_files(file_path)
 
 def cut_text():
     text_area.event_generate("<<Cut>>")
@@ -167,6 +206,10 @@ file_menu.add_command(label="Save", command=save_file)
 file_menu.add_separator()
 file_menu.add_command(label="Exit", command=root.quit)
 
+# Add recent files menu
+recent_files_menu = tk.Menu(file_menu, tearoff=0)
+file_menu.add_cascade(label="Recent Files", menu=recent_files_menu)
+
 # Add edit menu
 edit_menu = tk.Menu(menu_bar, tearoff=0)
 menu_bar.add_cascade(label="Edit", menu=edit_menu)
@@ -196,6 +239,10 @@ selection_menu.add_command(label="Clear Selection", command=clear_selection)
 
 # Bind Escape key to exit full screen mode
 root.bind("<Escape>", exit_full_screen)
+
+# Load and update recent files
+recent_files = load_recent_files()
+update_recent_files_menu()
 
 # Run the application
 root.mainloop()
