@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, font, messagebox
+from tkinter import filedialog, font, messagebox, colorchooser
 import os
 
 RECENT_FILES_PATH = "recent_files.txt"
@@ -35,6 +35,7 @@ def open_recent_file(file_path):
             text_area.delete(1.0, tk.END)
             text_area.insert(tk.END, file.read())
         update_recent_files(file_path)
+        update_status_bar()
     else:
         messagebox.showerror("Error", f"File not found: {file_path}")
 
@@ -185,6 +186,29 @@ def update_status_bar(event=None):
     word_count = len(text_area.get(1.0, tk.END).split())
     status_text.set(f"Line: {row} | Column: {col} | Lines: {line_count} | Words: {word_count} | Characters: {char_count}")
 
+def set_theme(theme):
+    themes = {
+        "Light": {
+            "bg": "white",
+            "fg": "black",
+            "insertbackground": "black",
+            "selectbackground": "lightblue",
+            "selectforeground": "black"
+        },
+        "Dark": {
+            "bg": "#2e2e2e",
+            "fg": "white",
+            "insertbackground": "white",
+            "selectbackground": "#4d4d4d",
+            "selectforeground": "white"
+        }
+    }
+    current_theme = themes[theme]
+    text_area.config(bg=current_theme["bg"], fg=current_theme["fg"], insertbackground=current_theme["insertbackground"],
+                     selectbackground=current_theme["selectbackground"], selectforeground=current_theme["selectforeground"])
+    text_line_numbers.config(bg=current_theme["bg"], fg=current_theme["fg"])
+    status_bar.config(bg=current_theme["bg"], fg=current_theme["fg"])
+
 # Create the main window
 root = tk.Tk()
 root.title("Simple Text Editor")
@@ -193,13 +217,17 @@ root.geometry("800x600")
 # Initialize full screen state
 is_full_screen = False
 
+# Create a frame for the text area and scrollbar
+text_frame = tk.Frame(root)
+text_frame.pack(expand=1, fill="both")
+
 # Create a text area
 text_font = font.Font(family="Helvetica", size=12)
-text_area = tk.Text(root, wrap="word", font=text_font, undo=True)
+text_area = tk.Text(text_frame, wrap="word", font=text_font, undo=True)
 text_area.pack(expand=1, fill="both", side="right")
 
 # Create line numbers
-text_line_numbers = TextLineNumbers(root, width=30)
+text_line_numbers = TextLineNumbers(text_frame, width=30)
 text_line_numbers.attach(text_area)
 text_line_numbers.pack(side="left", fill="y")
 
@@ -226,7 +254,7 @@ update_status_bar()
 menu_bar = tk.Menu(root)
 root.config(menu=menu_bar)
 
-# Add file menu
+# Create File menu
 file_menu = tk.Menu(menu_bar, tearoff=0)
 menu_bar.add_cascade(label="File", menu=file_menu)
 file_menu.add_command(label="New", command=new_file)
@@ -235,24 +263,24 @@ file_menu.add_command(label="Save", command=save_file)
 file_menu.add_separator()
 file_menu.add_command(label="Exit", command=root.quit)
 
-# Add recent files menu
+# Create Recent Files menu
 recent_files_menu = tk.Menu(file_menu, tearoff=0)
 file_menu.add_cascade(label="Recent Files", menu=recent_files_menu)
 
-# Add edit menu
+# Create Edit menu
 edit_menu = tk.Menu(menu_bar, tearoff=0)
 menu_bar.add_cascade(label="Edit", menu=edit_menu)
-edit_menu.add_command(label="Undo", command=undo_action)
-edit_menu.add_command(label="Redo", command=redo_action)
-edit_menu.add_separator()
 edit_menu.add_command(label="Cut", command=cut_text)
 edit_menu.add_command(label="Copy", command=copy_text)
 edit_menu.add_command(label="Paste", command=paste_text)
+edit_menu.add_command(label="Undo", command=undo_action)
+edit_menu.add_command(label="Redo", command=redo_action)
 edit_menu.add_separator()
-edit_menu.add_command(label="Select All", command=select_all)
 edit_menu.add_command(label="Find and Replace", command=find_text)
+edit_menu.add_command(label="Select All", command=select_all)
+edit_menu.add_command(label="Clear Selection", command=clear_selection)
 
-# Add view menu
+# Create View menu
 view_menu = tk.Menu(menu_bar, tearoff=0)
 menu_bar.add_cascade(label="View", menu=view_menu)
 view_menu.add_command(label="Zoom In", command=zoom_in)
@@ -260,18 +288,18 @@ view_menu.add_command(label="Zoom Out", command=zoom_out)
 view_menu.add_command(label="Default Zoom", command=default_zoom)
 view_menu.add_command(label="Toggle Full Screen", command=toggle_full_screen)
 
-# Add selection menu
-selection_menu = tk.Menu(menu_bar, tearoff=0)
-menu_bar.add_cascade(label="Selection", menu=selection_menu)
-selection_menu.add_command(label="Select All", command=select_all)
-selection_menu.add_command(label="Clear Selection", command=clear_selection)
+# Create Theme menu
+theme_menu = tk.Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="Theme", menu=theme_menu)
+theme_menu.add_command(label="Light", command=lambda: set_theme("Light"))
+theme_menu.add_command(label="Dark", command=lambda: set_theme("Dark"))
 
-# Bind Escape key to exit full screen mode
-root.bind("<Escape>", exit_full_screen)
-
-# Load and update recent files
+# Load recent files and update the menu
 recent_files = load_recent_files()
 update_recent_files_menu()
 
-# Run the application
+# Bind Esc key to exit full screen mode
+root.bind("<Escape>", exit_full_screen)
+
+# Start the main loop
 root.mainloop()
