@@ -40,6 +40,7 @@ def open_recent_file(file_path):
 
 def new_file():
     text_area.delete(1.0, tk.END)
+    update_status_bar()
 
 def open_file():
     file_path = filedialog.askopenfilename(defaultextension=".txt", 
@@ -49,6 +50,7 @@ def open_file():
             text_area.delete(1.0, tk.END)
             text_area.insert(tk.END, file.read())
         update_recent_files(file_path)
+        update_status_bar()
 
 def save_file():
     file_path = filedialog.asksaveasfilename(defaultextension=".txt", 
@@ -60,12 +62,14 @@ def save_file():
 
 def cut_text():
     text_area.event_generate("<<Cut>>")
+    update_status_bar()
 
 def copy_text():
     text_area.event_generate("<<Copy>>")
 
 def paste_text():
     text_area.event_generate("<<Paste>>")
+    update_status_bar()
 
 def select_all():
     text_area.tag_add('sel', '1.0', 'end')
@@ -78,12 +82,14 @@ def undo_action():
         text_area.edit_undo()
     except tk.TclError:
         pass
+    update_status_bar()
 
 def redo_action():
     try:
         text_area.edit_redo()
     except tk.TclError:
         pass
+    update_status_bar()
 
 def zoom_in():
     current_font_size = text_font.actual()["size"]
@@ -170,6 +176,14 @@ class TextLineNumbers(tk.Canvas):
 
 def on_change(event):
     text_line_numbers.redraw()
+    update_status_bar()
+
+def update_status_bar(event=None):
+    row, col = text_area.index(tk.INSERT).split('.')
+    line_count = int(text_area.index(tk.END).split('.')[0]) - 1
+    char_count = len(text_area.get(1.0, tk.END)) - 1
+    word_count = len(text_area.get(1.0, tk.END).split())
+    status_text.set(f"Line: {row} | Column: {col} | Lines: {line_count} | Words: {word_count} | Characters: {char_count}")
 
 # Create the main window
 root = tk.Tk()
@@ -192,6 +206,21 @@ text_line_numbers.pack(side="left", fill="y")
 # Bind events for line numbers
 text_area.bind("<KeyPress>", on_change)
 text_area.bind("<ButtonRelease>", on_change)
+
+# Create a status bar frame
+status_bar_frame = tk.Frame(root)
+status_bar_frame.pack(side=tk.BOTTOM, fill=tk.X)
+
+# Create a horizontal scrollbar
+x_scroll = tk.Scrollbar(status_bar_frame, orient=tk.HORIZONTAL, command=text_area.xview)
+x_scroll.pack(side=tk.BOTTOM, fill=tk.X)
+text_area.config(xscrollcommand=x_scroll.set)
+
+# Create the status bar label
+status_text = tk.StringVar()
+status_bar = tk.Label(status_bar_frame, textvariable=status_text, anchor='w')
+status_bar.pack(side=tk.LEFT, fill=tk.X)
+update_status_bar()
 
 # Create a menu bar
 menu_bar = tk.Menu(root)
