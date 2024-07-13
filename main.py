@@ -209,6 +209,51 @@ def set_theme(theme):
     text_line_numbers.config(bg=current_theme["bg"], fg=current_theme["fg"])
     status_bar.config(bg=current_theme["bg"], fg=current_theme["fg"])
 
+def select_font():
+    fonts = list(font.families())
+    font_dialog = tk.Toplevel(root)
+    font_dialog.title("Select Font")
+    font_dialog.transient(root)
+
+    tk.Label(font_dialog, text="Font:").grid(row=0, column=0, padx=4, pady=4)
+
+    font_var = tk.StringVar()
+    font_var.set(text_font.cget("family"))
+    
+    font_listbox = tk.Listbox(font_dialog, listvariable=font_var, height=10)
+    font_listbox.grid(row=0, column=1, padx=4, pady=4)
+    font_listbox.insert(tk.END, *fonts)
+    
+    def update_font(event=None):
+        selected_font = font_listbox.get(font_listbox.curselection())
+        text_font.config(family=selected_font)
+    
+    font_listbox.bind("<<ListboxSelect>>", update_font)
+    tk.Button(font_dialog, text="OK", command=font_dialog.destroy).grid(row=1, column=1, padx=4, pady=4)
+
+    font_dialog.mainloop()
+
+def select_font_size():
+    size_dialog = tk.Toplevel(root)
+    size_dialog.title("Select Font Size")
+    size_dialog.transient(root)
+
+    tk.Label(size_dialog, text="Size:").grid(row=0, column=0, padx=4, pady=4)
+
+    size_var = tk.IntVar()
+    size_var.set(text_font.cget("size"))
+
+    size_scale = tk.Scale(size_dialog, from_=8, to=72, orient=tk.HORIZONTAL, variable=size_var)
+    size_scale.grid(row=0, column=1, padx=4, pady=4)
+
+    def update_font_size(event=None):
+        text_font.config(size=size_var.get())
+
+    size_scale.bind("<Motion>", update_font_size)
+    tk.Button(size_dialog, text="OK", command=size_dialog.destroy).grid(row=1, column=1, padx=4, pady=4)
+
+    size_dialog.mainloop()
+
 # Create the main window
 root = tk.Tk()
 root.title("Simple Text Editor")
@@ -287,6 +332,9 @@ view_menu.add_command(label="Zoom In", command=zoom_in)
 view_menu.add_command(label="Zoom Out", command=zoom_out)
 view_menu.add_command(label="Default Zoom", command=default_zoom)
 view_menu.add_command(label="Toggle Full Screen", command=toggle_full_screen)
+view_menu.add_separator()
+view_menu.add_command(label="Select Font", command=select_font)
+view_menu.add_command(label="Select Font Size", command=select_font_size)
 
 # Create Theme menu
 theme_menu = tk.Menu(menu_bar, tearoff=0)
